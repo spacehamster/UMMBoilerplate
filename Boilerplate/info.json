@@ -1,0 +1,12 @@
+{
+  "Id": "Boilerplate",
+  "DisplayName": "Boilerplate",
+  "Author": "spacehamster",
+  "Version": "1.0.0",
+  "ManagerVersion": "0.13.0",
+  "Requirements": [],
+  "AssemblyName": "Boilerplate.dll",
+  "EntryMethod": "Boilerplate.Main.Load",
+  "HomePage": "https://github.com/spacehamster/UMMBoilerplate",
+  "Repository": "https://raw.githubusercontent.com/spacehamster/UMMBoilerplate/master/Boilerplate/Repository.json"
+}
