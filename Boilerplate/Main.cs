@@ -57,7 +57,7 @@ namespace Boilerplate
                 harmony.Patch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod,
                     prefix: new HarmonyMethod(typeof(FreeRespec), "Player_RespecsUsed_Setter_Patch"));
             }
-            if (FreeRespec.patched && (!settings.freeMercs || !enabled))
+            if (FreeRespec.patched && (!settings.freeRespec || !enabled))
             {
                 harmony.Unpatch(AccessTools.Method(typeof(Player), "RespecsUsed"), HarmonyPatchType.All, modId);
             }
