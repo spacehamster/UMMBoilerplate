@@ -3,6 +3,7 @@ using UnityModManagerNet;
 using System;
 using UnityEngine;
 using Kingmaker;
+using System.Diagnostics;
 
 namespace Boilerplate
 {
@@ -25,10 +26,11 @@ namespace Boilerplate
                 modEntry.OnSaveGUI = OnSaveGUI;
                 harmony = HarmonyInstance.Create(modEntry.Info.Id);
                 CheckPatches();
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 logger.Error(ex.ToString());
-                throw ex;   
+                throw ex;
             }
             return true;
         }
@@ -41,26 +43,38 @@ namespace Boilerplate
         }
         static void CheckPatches()
         {
-            if (!FreeMerc.patched && settings.freeMercs && enabled)
+            logger.Log("Checking patches");
+            using (new TestCodeTimer("Patching Time"))
             {
-                harmony.Patch(AccessTools.Method(typeof(Player), "GetCustomCompanionCost"),
-                    postfix: new HarmonyMethod(typeof(FreeMerc), "Player_GetCustomCompanionCost_Patch"));
-            }
-            if (FreeMerc.patched && (!settings.freeMercs || !enabled))
-            {
-                harmony.Unpatch(AccessTools.Method(typeof(Player), "GetCustomCompanionCost"), HarmonyPatchType.All, modId);
-            }
-            if (!FreeRespec.patched && settings.freeRespec && enabled)
-            {
-                harmony.Patch(AccessTools.Property(typeof(Player), "RespecsUsed").GetMethod,
-                     postfix: new HarmonyMethod(typeof(FreeRespec), "Player_RespecsUsed_Getter_Patch"));
-                harmony.Patch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod,
-                    prefix: new HarmonyMethod(typeof(FreeRespec), "Player_RespecsUsed_Setter_Patch"));
-            }
-            if (FreeRespec.patched && (!settings.freeRespec || !enabled))
-            {
-                harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").GetMethod, HarmonyPatchType.All, modId);
-                harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod, HarmonyPatchType.All, modId);
+                if (!FreeMerc.patched && settings.freeMercs && enabled)
+                {
+                    logger.Log("Patching GetCustomCompanionCost");
+                    harmony.Patch(AccessTools.Method(typeof(Player), "GetCustomCompanionCost"),
+                        postfix: new HarmonyMethod(typeof(FreeMerc), "Player_GetCustomCompanionCost_Patch"));
+                    FreeMerc.patched = true;
+                }
+                if (FreeMerc.patched && (!settings.freeMercs || !enabled))
+                {
+                    logger.Log("Unpatching GetCustomCompanionCost");
+                    harmony.Unpatch(AccessTools.Method(typeof(Player), "GetCustomCompanionCost"), HarmonyPatchType.All, modId);
+                    FreeMerc.patched = false;
+                }
+                if (!FreeRespec.patched && settings.freeRespec && enabled)
+                {
+                    logger.Log("Patching RespecsUsed");
+                    harmony.Patch(AccessTools.Property(typeof(Player), "RespecsUsed").GetMethod,
+                         postfix: new HarmonyMethod(typeof(FreeRespec), "Player_RespecsUsed_Getter_Patch"));
+                    harmony.Patch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod,
+                        prefix: new HarmonyMethod(typeof(FreeRespec), "Player_RespecsUsed_Setter_Patch"));
+                    FreeRespec.patched = true;
+                }
+                if (FreeRespec.patched && (!settings.freeRespec || !enabled))
+                {
+                    logger.Log("Unpatching RespecsUsed");
+                    harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").GetMethod, HarmonyPatchType.All, modId);
+                    harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod, HarmonyPatchType.All, modId);
+                    FreeRespec.patched = false;
+                }
             }
         }
         static void OnSaveGUI(UnityModManager.ModEntry modEntry)
@@ -75,7 +89,8 @@ namespace Boilerplate
             {
                 var toggle = GUILayout.Toggle(settings.freeMercs, "Free Mercs");
                 settings.freeRespec = GUILayout.Toggle(settings.freeRespec, "Free Respecs");
-                if (Game.Instance.Player != null) {
+                if (Game.Instance.Player != null)
+                {
                     GUILayout.Label($"MercCost {Game.Instance.Player.GetCustomCompanionCost()}");
                     GUILayout.Label($"Respecs {Game.Instance.Player.RespecsUsed}");
                 }
@@ -84,6 +99,22 @@ namespace Boilerplate
             {
                 logger.Error(ex.ToString());
                 throw ex;
+            }
+        }
+        public class TestCodeTimer : IDisposable
+        {
+            private readonly Stopwatch m_Stopwatch;
+            private readonly string m_Text;
+            public TestCodeTimer(string text)
+            {
+                this.m_Text = text;
+                this.m_Stopwatch = Stopwatch.StartNew();
+            }
+            public void Dispose()
+            {
+                this.m_Stopwatch.Stop();
+                string message = string.Format("Profiled {0}: {1:0.00}ms", this.m_Text, this.m_Stopwatch.ElapsedMilliseconds);
+                logger.Log(message);
             }
         }
     }
