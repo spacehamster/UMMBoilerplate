@@ -59,7 +59,8 @@ namespace Boilerplate
             }
             if (FreeRespec.patched && (!settings.freeRespec || !enabled))
             {
-                harmony.Unpatch(AccessTools.Method(typeof(Player), "RespecsUsed"), HarmonyPatchType.All, modId);
+                harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").GetMethod, HarmonyPatchType.All, modId);
+                harmony.Unpatch(AccessTools.Property(typeof(Player), "RespecsUsed").SetMethod, HarmonyPatchType.All, modId);
             }
         }
         static void OnSaveGUI(UnityModManager.ModEntry modEntry)
